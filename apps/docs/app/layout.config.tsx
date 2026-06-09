@@ -14,5 +14,5 @@ export const baseOptions = {
     //   url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/app`,
     // },
   ],
-  githubUrl: 'https://github.com/lokeshsk/zerotrust-agents',
+  githubUrl: 'https://github.com/Zero-Trust-Agents/zerotrust-agents',
 };

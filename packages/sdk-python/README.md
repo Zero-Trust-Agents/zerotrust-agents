@@ -1,6 +1,6 @@
 # ZeroTrust Agents Python SDK
 
-The official Python SDK for interacting with the [ZeroTrust Agents](https://github.com/lokeshsk/zerotrust-agents) Control Plane.
+The official Python SDK for interacting with the [ZeroTrust Agents](https://github.com/Zero-Trust-Agents/zerotrust-agents) Control Plane.
 
 ## Installation
 

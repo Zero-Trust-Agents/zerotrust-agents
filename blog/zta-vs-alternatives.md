@@ -12,7 +12,7 @@ If they are using **LangChain**, they might write a custom `@tool` decorator tha
 
 This is known as **Framework-Level Security**, and for enterprise deployments, it is a disaster waiting to happen.
 
-To solve this, I built **[ZeroTrust Agents](https://github.com/lokeshsk/zerotrust-agents)**, an open-source deterministic API gateway for your AI agents. 
+To solve this, I built **[ZeroTrust Agents](https://github.com/Zero-Trust-Agents/zerotrust-agents)**, an open-source deterministic API gateway for your AI agents. 
 
 Securing your agent with it is as simple as changing one line of code:
 
@@ -62,6 +62,6 @@ Why is this architectural shift so much better?
 
 Security cannot be a bolt-on patch to an agent framework. It must be a foundational, decoupled layer. 
 
-If you are building AI agents that touch production data, check out **[ZeroTrust Agents on GitHub](https://github.com/lokeshsk/zerotrust-agents)**. We are completely open-source and would love for you to spin up the Docker container, try it out, and leave us a ⭐ if you find it useful!
+If you are building AI agents that touch production data, check out **[ZeroTrust Agents on GitHub](https://github.com/Zero-Trust-Agents/zerotrust-agents)**. We are completely open-source and would love for you to spin up the Docker container, try it out, and leave us a ⭐ if you find it useful!
 
 **How are you currently securing your AI agents? Let me know in the comments below! 👇**

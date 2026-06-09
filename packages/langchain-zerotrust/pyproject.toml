@@ -23,4 +23,4 @@ dependencies = [
 
 [project.urls]
 "Homepage" = "https://zerotrust-agents.com"
-"Bug Tracker" = "https://github.com/lokeshsk/zerotrust-agents/issues"
+"Bug Tracker" = "https://github.com/Zero-Trust-Agents/zerotrust-agents/issues"

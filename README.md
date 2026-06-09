@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/lokeshsk/zerotrust-agents/stargazers"><img src="https://img.shields.io/github/stars/lokeshsk/zerotrust-agents?style=for-the-badge&color=yellow" alt="Stars" /></a>
-  <a href="https://github.com/lokeshsk/zerotrust-agents/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-BSL%201.1-blue.svg?style=for-the-badge" alt="License" /></a>
+  <a href="https://github.com/Zero-Trust-Agents/zerotrust-agents/stargazers"><img src="https://img.shields.io/github/stars/Zero-Trust-Agents/zerotrust-agents?style=for-the-badge&color=yellow" alt="Stars" /></a>
+  <a href="https://github.com/Zero-Trust-Agents/zerotrust-agents/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-BSL%201.1-blue.svg?style=for-the-badge" alt="License" /></a>
   <a href="https://zerotrust-agents.com"><img src="https://img.shields.io/website?url=https%3A%2F%2Fzerotrust-agents.com&style=for-the-badge&label=Website" alt="Website" /></a>
   <a href="https://docs.zerotrust-agents.com"><img src="https://img.shields.io/badge/Docs-Live-green?style=for-the-badge" alt="Docs" /></a>
 </p>
@@ -66,7 +66,7 @@ Getting started is easy. You can run the entire ZeroTrust Agents stack (Gateway,
 We provide an interactive launcher that manages dependencies for you.
 
 ```bash
-git clone https://github.com/lokeshsk/zerotrust-agents.git
+git clone https://github.com/Zero-Trust-Agents/zerotrust-agents.git
 cd zerotrust-agents
 chmod +x start.sh
 

@@ -2,7 +2,7 @@ import React from 'react';
 
 async function getGithubStars() {
   try {
-    const res = await fetch('https://api.github.com/repos/lokeshsk/zerotrust-agents', { next: { revalidate: 3600 } });
+    const res = await fetch('https://api.github.com/repos/Zero-Trust-Agents/zerotrust-agents', { next: { revalidate: 3600 } });
     if (!res.ok) return 0;
     const data = await res.json();
     return data.stargazers_count || 0;
@@ -202,7 +202,7 @@ export default async function Home() {
                 <li className="flex items-center text-slate-300"><svg className="w-5 h-5 text-indigo-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> Multi-Tenant Workspaces</li>
                 <li className="flex items-center text-slate-300"><svg className="w-5 h-5 text-indigo-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> Prometheus Metrics</li>
               </ul>
-              <a href="https://github.com/lokeshsk/zerotrust-agents" className="block w-full py-3 bg-white/5 hover:bg-white/10 text-center rounded-xl font-semibold transition-colors cursor-pointer">Clone Repository</a>
+              <a href="https://github.com/Zero-Trust-Agents/zerotrust-agents" className="block w-full py-3 bg-white/5 hover:bg-white/10 text-center rounded-xl font-semibold transition-colors cursor-pointer">Clone Repository</a>
             </div>
             
             <div className="bg-gradient-to-b from-indigo-900/40 to-[#111] border border-indigo-500/30 rounded-3xl p-10 relative shadow-[0_0_40px_rgba(79,70,229,0.1)]">
