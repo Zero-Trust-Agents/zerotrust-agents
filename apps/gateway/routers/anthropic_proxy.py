@@ -5,6 +5,7 @@ import os
 import httpx
 import time
 import logging
+import re
 
 from policy_engine import check_policy, log_tool_call
 from routers.openai_proxy import (
@@ -63,7 +64,7 @@ async def messages_proxy(request: Request):
     from main import EE_ACTIVE
     if EE_ACTIVE:
         from ee.billing import is_budget_exceeded, track_billing
-        if await is_budget_exceeded(tenant_id):
+        if await is_budget_exceeded(tenant_id, agent_id):
             return JSONResponse(status_code=402, content={"error": "Budget exceeded"})
 
     # Auto-discovery
@@ -167,17 +168,14 @@ async def messages_proxy(request: Request):
                             tool_name = tc["name"]
                             arguments = tc["input_str"]
                             
-                            ssn_pattern = re.compile(r'\b\d{3}-\d{2}-\d{4}\b')
-                            if ssn_pattern.search(arguments):
-                                dlp_error = "Semantic DLP Block: Sensitive PII (SSN) detected in payload."
-                            else:
-                                api_key_pattern = re.compile(r'\b(AKIA[0-9A-Z]{16}|sk-[a-zA-Z0-9]{48})\b')
-                                if api_key_pattern.search(arguments):
-                                    dlp_error = "Semantic DLP Block: API Key or Secret detected in payload."
-                                else:
-                                    dlp_error = await semantic_dlp_check(arguments, tenant_id)
+                            is_blocked, dlp_error, modified_args = await semantic_dlp_check(arguments, tenant_id)
+                            block_reason = dlp_error
+                            is_allowed = not is_blocked
                             
-                            is_allowed = not bool(dlp_error)
+                            if is_allowed and modified_args != arguments:
+                                arguments = modified_args
+                                tc["function"]["arguments"] = modified_args
+                            
                             block_reason = dlp_error
                             
                             if is_allowed:
@@ -221,7 +219,7 @@ async def messages_proxy(request: Request):
         return JSONResponse(status_code=502, content={"error": str(e)})
 
     if EE_ACTIVE:
-        track_billing(tenant_id, response_data)
+        track_billing(tenant_id, agent_id, response_data)
 
     # Reconstruct Anthropic Response Format
     anthropic_response = {
@@ -254,21 +252,16 @@ async def messages_proxy(request: Request):
                 tool_name = tc["function"]["name"]
                 arguments = tc["function"]["arguments"]
                 
-                # Policy check
-                ssn_pattern = re.compile(r'\b\d{3}-\d{2}-\d{4}\b')
-                if ssn_pattern.search(arguments):
-                    dlp_error = "Semantic DLP Block: Sensitive PII (SSN) detected in payload."
-                else:
-                    api_key_pattern = re.compile(r'\b(AKIA[0-9A-Z]{16}|sk-[a-zA-Z0-9]{48})\b')
-                    if api_key_pattern.search(arguments):
-                        dlp_error = "Semantic DLP Block: API Key or Secret detected in payload."
-                    else:
-                        dlp_error = await semantic_dlp_check(arguments, tenant_id)
+                # Semantic Payload Inspection (DLP)
+                is_blocked, dlp_error, modified_args = await semantic_dlp_check(arguments, tenant_id)
                 
-                if dlp_error:
+                if is_blocked:
                     is_allowed = False
                     block_reason = dlp_error
                 else:
+                    if modified_args != arguments:
+                        tool_call["function"]["arguments"] = modified_args
+                        arguments = modified_args
                     policy_action = await check_policy(tenant_id, agent_id, tool_name, arguments)
                     if policy_action == "allow":
                         is_allowed = True

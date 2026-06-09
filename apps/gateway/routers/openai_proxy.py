@@ -78,14 +78,19 @@ async def get_tenant_dlp_config(tenant_id: str):
         logger.error(f"Failed to fetch tenant config: {e}")
     return None
 
-async def semantic_dlp_check(arguments: str, tenant_id: str) -> str:
+from typing import Tuple
+from main import EE_ACTIVE
+
+async def semantic_dlp_check(arguments: str, tenant_id: str) -> Tuple[bool, str, str]:
     """
-    Scans tool arguments for PII and destructive commands using a secondary LLM.
-    Returns an error message if blocked, otherwise None.
+    Scans tool arguments for PII and destructive commands using a secondary LLM or Regex.
+    Returns (is_blocked, block_reason, modified_arguments).
+    If EE is active, it actively redacts SSNs and API keys instead of blocking.
     """
     if not arguments:
-        return None
+        return False, "", arguments
         
+    modified_arguments = arguments
     config = await get_tenant_dlp_config(tenant_id)
     if config and config.get("dlp_model"):
         # Use LiteLLM to run the semantic check
@@ -121,26 +126,30 @@ async def semantic_dlp_check(arguments: str, tenant_id: str) -> str:
             content = response.choices[0].message.content.upper()
             
             if "BLOCK" in content:
-                return f"Semantic DLP Block ({sensitivity} sensitivity): Malicious intent or sensitive data detected by LLM."
-            return None
+                return True, f"Semantic DLP Block ({sensitivity} sensitivity): Malicious intent or sensitive data detected by LLM.", modified_arguments
+            return False, "", modified_arguments
         except Exception as e:
             logger.error(f"LiteLLM DLP Check Failed, falling back to regex: {e}")
 
         
     # Fallback MVP regex check
     destructive_sql = re.compile(r'\b(DROP|DELETE|TRUNCATE|ALTER)\b', re.IGNORECASE)
-    if destructive_sql.search(arguments):
-        return "Semantic DLP Block: Destructive command detected in payload."
+    if destructive_sql.search(modified_arguments):
+        return True, "Semantic DLP Block: Destructive command detected in payload.", modified_arguments
         
     ssn_pattern = re.compile(r'\b\d{3}-\d{2}-\d{4}\b')
-    if ssn_pattern.search(arguments):
-        return "Semantic DLP Block: Sensitive PII (SSN) detected in payload."
-        
     api_key_pattern = re.compile(r'\b(AKIA[0-9A-Z]{16}|sk-[a-zA-Z0-9]{48})\b')
-    if api_key_pattern.search(arguments):
-        return "Semantic DLP Block: API Key or Secret detected in payload."
-        
-    return None
+
+    if EE_ACTIVE:
+        modified_arguments = ssn_pattern.sub('***-REDACTED-***', modified_arguments)
+        modified_arguments = api_key_pattern.sub('***-REDACTED-***', modified_arguments)
+    else:
+        if ssn_pattern.search(arguments):
+            return True, "Semantic DLP Block: Sensitive PII (SSN) detected in payload.", arguments
+        if api_key_pattern.search(arguments):
+            return True, "Semantic DLP Block: API Key or Secret detected in payload.", arguments
+            
+    return False, "", modified_arguments
 
 @router.post("/chat/completions")
 async def chat_completions_proxy(request: Request):
@@ -261,9 +270,12 @@ async def chat_completions_proxy(request: Request):
                         tool_name = tc["function"]["name"]
                         arguments = tc["function"]["arguments"]
                         
-                        dlp_error = await semantic_dlp_check(arguments, tenant_id)
+                        is_blocked, dlp_error, modified_args = await semantic_dlp_check(arguments, tenant_id)
                         block_reason = dlp_error
-                        is_allowed = not bool(dlp_error)
+                        is_allowed = not is_blocked
+                        
+                        if is_allowed and modified_args != arguments:
+                            tc["function"]["arguments"] = modified_args
                         
                         if is_allowed:
                             policy_action = await check_policy(tenant_id, agent_id, tool_name, arguments)
@@ -313,12 +325,15 @@ async def chat_completions_proxy(request: Request):
                 arguments = tool_call["function"]["arguments"]
                 
                 # Semantic Payload Inspection (DLP)
-                dlp_error = await semantic_dlp_check(arguments, tenant_id)
+                is_blocked, dlp_error, modified_args = await semantic_dlp_check(arguments, tenant_id)
                 
-                if dlp_error:
+                if is_blocked:
                     is_allowed = False
                     block_reason = dlp_error
                 else:
+                    if modified_args != arguments:
+                        tool_call["function"]["arguments"] = modified_args
+                        arguments = modified_args
                     # Evaluate Policy Check
                     policy_action = await check_policy(tenant_id, agent_id, tool_name, arguments)
                     is_allowed = False
